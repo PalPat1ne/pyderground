@@ -10,10 +10,15 @@ def main(date_str: str):
     if zip_path:
         extracted_dir = download_files.extract_files(zip_path)
         rules_dir = Path('yara_rules')
+        output_file = Path('scan_results') / f"scan_results_{date.strftime('%Y_%m_%d')}.json"
+        output_file.parent.mkdir(exist_ok=True)
+
         scan_results = yara_scan.scan_files(extracted_dir, rules_dir)
-        yara_scan.save_results(scan_results, Path('scan_results.json'))
+        yara_scan.save_results(scan_results, output_file)
+
+        # Загрузка распакованных файлов и результатов сканирования в S3
         s3_upload.upload_to_s3(extracted_dir, "my-bucket")
-        s3_upload.upload_to_s3(Path("scan_results.json"), "my-bucket")
+        s3_upload.upload_to_s3(output_file, "my-bucket")
     else:
         print("Скачивание файла не удалось.")
 

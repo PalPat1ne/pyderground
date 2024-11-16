@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minioadmin   # Укажите ваш логин для MinIO
+      MINIO_ROOT_PASSWORD: minioadmin  # Укажите ваш пароль для MinIO
+    volumes:
+      - minio_data:/data  # Создаем том для хранения данных MinIO
+    ports:
+      - "9000:9000"       # Порт для API MinIO
+      - "9001:9001"       # Порт для веб-интерфейса MinIO (доступ по http://localhost:9001)
+    command: server /data
+
+volumes:
+  minio_data:
+    driver: local

@@ -1,7 +1,7 @@
 import boto3
 from pathlib import Path
 
-def upload_to_s3(directory: Path, bucket_name: str):
+def upload_to_s3(path: Path, bucket_name: str):
     s3 = boto3.client(
         's3',
         endpoint_url="http://localhost:9000",  # Для MinIO
@@ -14,7 +14,22 @@ def upload_to_s3(directory: Path, bucket_name: str):
     except s3.exceptions.BucketAlreadyOwnedByYou:
         pass
 
-    for file in directory.glob("**/*"):
-        if file.is_file():
-            s3.upload_file(str(file), bucket_name, file.name)
-            print(f"Загружен файл: {file.name}")
+    if path.is_dir():
+        # Рекурсивно загружаем все файлы из директории
+        for file_path in path.rglob("*"):
+            if file_path.is_file():
+                # Определяем относительный путь относительно `path`, если возможно
+                try:
+                    s3_path = str(file_path.relative_to(path))
+                except ValueError:
+                    s3_path = file_path.name  # Если не получается, используем только имя файла
+
+                s3.upload_file(str(file_path), bucket_name, s3_path)
+                print(f"Загружен {file_path} в S3 {bucket_name}/{s3_path}")
+    elif path.is_file():
+        # Загружаем один файл, если путь является файлом
+        s3_path = path.name
+        s3.upload_file(str(path), bucket_name, s3_path)
+        print(f"Загружен {path} в S3 {bucket_name}/{s3_path}")
+    else:
+        print(f"Путь {path} не является файлом или директорией.")
