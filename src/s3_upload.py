@@ -13,7 +13,7 @@ def upload_to_s3(path: Path, bucket_name: str, key_prefix: str = "", is_results:
         bucket_name (str): The name of the S3 bucket.
         key_prefix (str): The prefix (folder) in the S3 bucket.
         is_results (bool): If True, upload results to a common folder named 'results'.
-                           If False, upload files under the provided key prefix.
+                           If False, upload files under a date-specific folder (key_prefix).
     """
     # Initialize the S3 client (adjust endpoint_url if necessary)
     s3 = boto3.client(
@@ -35,10 +35,7 @@ def upload_to_s3(path: Path, bucket_name: str, key_prefix: str = "", is_results:
             return
 
     # Determine the base key prefix
-    if is_results:
-        base_prefix = "results"  # All results are stored in 'results/' folder
-    else:
-        base_prefix = key_prefix  # Use provided key prefix for other files
+    base_prefix = "results" if is_results else key_prefix
 
     # Check if the prefix already exists in S3
     if prefix_exists(s3, bucket_name, base_prefix):
