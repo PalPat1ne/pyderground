@@ -32,7 +32,7 @@ def main(date_str: str) -> None:
         yara_scan.save_results(scan_results, output_file)
 
         # Determine the key prefix based on the archive name
-        key_prefix: str = zip_path.stem  # Name of the archive without extension
+        key_prefix: str = f"viruses/{date.strftime('%Y.%m.%d')}"  # Name of the archive without extension
 
         # Upload the extracted files to S3 under the key prefix
         s3_upload.upload_to_s3(extracted_dir, "my-bucket", key_prefix=key_prefix)
