@@ -12,13 +12,12 @@ def upload_to_s3(path: Path, bucket_name: str, key_prefix: str = "", is_results:
         path (Path): The file or directory to upload.
         bucket_name (str): The name of the S3 bucket.
         key_prefix (str): The prefix (folder) in the S3 bucket.
-        is_results (bool): If True, upload results to a common folder named 'results'.
-                           If False, upload files under a date-specific folder (key_prefix).
+        is_results (bool): If True, upload results to the 'results' folder without skipping.
     """
-    # Initialize the S3 client (adjust endpoint_url if necessary)
+    # Initialize the S3 client
     s3 = boto3.client(
         's3',
-        endpoint_url="http://localhost:9000",  # For MinIO, adjust as needed
+        endpoint_url="http://localhost:9000",  # Adjust for MinIO or AWS
         aws_access_key_id="minioadmin",
         aws_secret_access_key="minioadmin",
     )
@@ -37,8 +36,8 @@ def upload_to_s3(path: Path, bucket_name: str, key_prefix: str = "", is_results:
     # Determine the base key prefix
     base_prefix = "results" if is_results else key_prefix
 
-    # Check if the prefix already exists in S3
-    if prefix_exists(s3, bucket_name, base_prefix):
+    # Skip duplication check for results
+    if not is_results and prefix_exists(s3, bucket_name, base_prefix):
         print(f"Prefix '{base_prefix}' already exists in bucket '{bucket_name}'. Skipping upload to avoid duplication.")
         return
 
@@ -46,13 +45,8 @@ def upload_to_s3(path: Path, bucket_name: str, key_prefix: str = "", is_results:
         # Upload all files in the directory recursively
         for file_path in path.rglob("*"):
             if file_path.is_file():
-                # Calculate the S3 object name relative to the upload path
-                try:
-                    relative_path = file_path.relative_to(path)
-                    s3_path: str = f"{base_prefix}/{str(relative_path)}"
-                except ValueError:
-                    s3_path = f"{base_prefix}/{file_path.name}"  # Use file name if relative path can't be determined
-                # Upload the file to S3
+                relative_path = file_path.relative_to(path)
+                s3_path: str = f"{base_prefix}/{str(relative_path)}"
                 try:
                     s3.upload_file(str(file_path), bucket_name, s3_path)
                     print(f"Uploaded {file_path} to S3 bucket {bucket_name} as {s3_path}")
