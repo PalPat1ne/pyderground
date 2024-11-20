@@ -51,6 +51,12 @@ pip install poetry
 
 2. **Создайте виртуальное окружение и установите зависимости** с помощью Poetry:
    ```bash
+   python3 -m venv .
+   ```
+   ```bash
+   source ./bin/activate
+   ```
+   ```bash
    poetry install
    ```
 
