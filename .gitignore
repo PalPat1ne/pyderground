@@ -1,0 +1,5 @@
+poetry.lock
+/.mypy*
+*.json
+logs/
+minio_data/
