@@ -21,6 +21,7 @@ vx_underground_processor/
 │   └── rules.yar                  # Пример YARA-правил
 ├── pyproject.toml                 # Файл зависимостей для Poetry
 ├── docker-compose.yml             # Docker Compose файл для MinIO
+├── main.py                        # main.py основной файл для запуска
 └── README.md                      # Документация проекта
 ```
 
