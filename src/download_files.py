@@ -2,7 +2,6 @@ import requests
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
-import os
 import py7zr  # Library for working with 7z archives
 from tqdm import tqdm  # For progress bar
 
@@ -83,24 +82,10 @@ def extract_files(zip_path: Path) -> Path:
     extract_dir: Path = Path("extracted_files") / zip_path.stem
     # Create the extraction directory if it doesn't exist
     extract_dir.mkdir(parents=True, exist_ok=True)
+
     # Open the archive with the password
-    try:
-        # Try to open and extract archive
-        with py7zr.SevenZipFile(zip_path, mode='r', password='infected') as archive:
-            archive.extractall(path=extract_dir)
-        print(f"Файлы из {zip_path.name} извлечены в директорию {extract_dir}")
-        return extract_dir
-
-    except py7zr.Bad7zFile:
-        print(f"Ошибка: архив '{zip_path.name}' поврежден или имеет неверный формат.")
-        # Delete corrupted file
-        try:
-            os.remove(zip_path)
-            print(f"Поврежденный файл '{zip_path.name}' удален.")
-        except OSError as e:
-            print(f"Ошибка при удалении файла '{zip_path.name}': {e}")
-        return None
-
-    except Exception as e:
-        print(f"Неожиданная ошибка при извлечении архива: {e}")
-        return None
+    with py7zr.SevenZipFile(zip_path, mode='r', password='infected') as archive:
+        # Extract all files into the extraction directory
+        archive.extractall(path=extract_dir)
+    print(f"Файлы из {zip_path.name} извлечены в директорию {extract_dir}")
+    return extract_dir
