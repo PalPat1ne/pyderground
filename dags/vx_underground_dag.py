@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 import sys
 import os
+import shutil
 sys.path.append('/opt/airflow/app')
 
 # Import custom modules
@@ -15,33 +16,41 @@ def vx_underground_processing(**kwargs) -> None:
     Airflow task function to process VX Underground files.
     """
     # Get the execution date from Airflow context
-    date_str: str = kwargs.get('dag_run').conf.get('date')
-    if not date_str:
-        # Если дата не указана, используем текущую дату
-        date_str = kwargs['ds']
-    # Convert the date string to a datetime object
+    date_str: str = kwargs['ds']
     date: datetime = datetime.strptime(date_str, "%Y-%m-%d")
-    # Download the archive for the specified date
-    zip_path: Optional[Path] = download_files.download_file(date)
+
+    # Download the archive
+    zip_path = download_files.download_file(date)
     if zip_path:
-        # Extract files from the downloaded archive
-        extracted_dir: Path = download_files.extract_files(zip_path)
-        # Path to the YARA rules directory in Airflow
-        rules_dir: Path = Path('yara_rules')  # Adjust path as needed
-        # Output file for scan results
-        output_file: Path = Path('scan_results') / f"scan_results_{date.strftime('%Y_%m_%d')}.json"
-        output_file.parent.mkdir(parents=True, exist_ok=True)
+        # Extract files from the archive
+        extracted_dir = download_files.extract_files(zip_path)
 
-        # Scan the extracted files with YARA rules
+        # Define S3 bucket and key prefixes
+        bucket_name: str = "my-bucket"
+        viruses_key_prefix: str = f"viruses/{date.strftime('%Y.%m.%d')}"  # Separate folder for extracted files
+
+        # Path to the YARA rules and scan results
+        rules_dir = Path('/opt/airflow/app/yara_rules')
+        results_file = Path('/opt/airflow/app/scan_results') / f"scan_results_{date.strftime('%Y_%m_%d')}.json"
+        results_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Scan the files and save results
         scan_results = yara_scan.scan_files(extracted_dir, rules_dir)
-        # Save the scan results to a JSON file
-        yara_scan.save_results(scan_results, output_file)
+        yara_scan.save_results(scan_results, results_file)
 
-        # Upload the extracted files and scan results to S3
-        s3_upload.upload_to_s3(extracted_dir, "my-bucket")
-        s3_upload.upload_to_s3(output_file, "my-bucket")
+        # Upload extracted files (viruses) to their date-specific folder
+        s3_upload.upload_to_s3(extracted_dir, bucket_name, key_prefix=viruses_key_prefix)
+
+        # Upload scan results to the common results folder
+        s3_upload.upload_to_s3(results_file, bucket_name, is_results=True)
+
+        # Clean up local files
+        shutil.rmtree(extracted_dir)  # Remove the extracted files directory
+        zip_path.unlink()  # Remove the downloaded archive
+        results_file.unlink()  # Remove the results file
     else:
         print("Download failed.")
+
 
 # Default arguments for the DAG
 default_args = {

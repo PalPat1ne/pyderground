@@ -12,6 +12,22 @@ services:
     networks:
       - airflow_network
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # Порт для S3 совместимого API
+      - "9001:9001"   # Порт для консоли управления MinIO
+    volumes:
+      - ./minio_data:/data    # Хранение данных на хосте
+    command: server /data --console-address ":9001"
+    networks:
+      - airflow_network
+
+
   airflow-webserver:
     image: apache/airflow:latest-python3.9
     container_name: airflow-webserver
@@ -101,11 +117,7 @@ services:
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
     command: >
-      bash -c "
-        pip install poetry -i https://mirrors.aliyun.com/pypi/simple/ &&
-        cd /opt/airflow/app &&
-        poetry install &&
-        airflow db init"
+      bash -c "airflow db init"
     networks:
       - airflow_network
 

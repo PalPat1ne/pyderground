@@ -1,5 +1,8 @@
-poetry.lock
+app/poetry.lock
+dags/__pycache__/
 /.mypy*
 *.json
 logs/
 minio_data/
+app/downloads
+app/extracted_files
