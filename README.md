@@ -1,41 +1,66 @@
-# Pyderground
+# Автоматизация с использованием Airflow
 
-Этот проект представляет собой утилиту для загрузки и обработки вредоносных файлов с сервиса VX Underground, их сканирования с использованием YARA-правил и сохранения результатов в S3-хранилище (MinIO). Проект также поддерживает автоматизацию через Airflow DAG для ежедневного запуска и обработки файлов.
+Для автоматизации процессов загрузки, сканирования и сохранения файлов, в проекте используется интеграция с **Apache Airflow**. Это позволяет создать DAG, который управляет заданиями, обеспечивая планирование и автоматическое выполнение всех этапов обработки.
 
-## Основные функции
-
-- **Скачивание файлов** за указанный день с сервиса VX Underground.
-- **Извлечение файлов** из архивов и их сохранение в S3-хранилище (MinIO).
-- **Сканирование файлов** с использованием YARA-правил для обнаружения вредоносных объектов.
-- **Сохранение результатов** сканирования в формате JSON в S3-хранилище.
-
-## Структура проекта
-
-```plaintext
-vx_underground_processor/
-├── airflow_dags/                 # DAG-файлы для Airflow
-│   └── vx_underground_dag.py      # DAG для автоматизации
-├── src/                           # Основные скрипты
-│   ├── download_files.py          # Скачивание и извлечение файлов
-│   ├── s3_upload.py               # Загрузка файлов в S3
-│   ├── yara_scan.py               # Сканирование YARA
-├── yara_rules/                    # YARA-правила
-│   └── rules.yar                  # Пример YARA-правил
-├── pyproject.toml                 # Файл зависимостей для Poetry
-├── docker-compose.yml             # Docker Compose файл для MinIO
-└── README.md                      # Документация проекта
-```
 ## Быстрый старт
 
 ### Предварительные требования
 
 - **Python 3.9+**
 - **Docker и Docker Compose**
-- **Poetry** (для управления зависимостями)
 
 ### Установка
 
 1. **Клонируйте репозиторий**:
+   
    ```bash
    git clone https://github.com/PalPat1ne/pyderground.git
    cd pyderground
+   ```
+2. **Смените ветку на Airflow_Dag**:
+   ```bash
+   git checkout Airflow_Dag
+   ```
+
+3. **Установите права доступа для папок**:
+   ```bash
+   sudo chown -R :5000 app dags logs plugins
+   sudo chmod -R 777 app dags logs plugins
+   ```
+
+4. **Запустите контейнеры с помощью Docker Compose**:
+   ```bash
+   docker-compose -f docker-compose.airflow.yml up -d
+   ```
+5. **Создайте пользователя для Airflow Веб интерфейса**
+   ```bash
+   docker exec -it airflow-webserver airflow users create \
+    --username admin \
+    --firstname Admin \
+    --lastname User \
+    --role Admin \
+    --email admin@example.com \
+    --password yourpassword
+   ```
+6. **Убедитесь, что MinIO работает** на порту `9000`     (API) и веб-интерфейс доступен на порту `9001`.    Перейдите по адресу `http://localhost:9001` и   используйте учетные данные по умолчанию:
+   - **Пользователь**: `minioadmin`
+   - **Пароль**: `minioadmin`
+
+7. **Проверьте работу Airflow** на порту `8080`
+   Перейдите по адресу `http://localhost:8080` и используйте учетные данные по которые вводили в пункте 5
+   - **Пользователь**: `Admin`
+   - **Пароль**: `yourpassword`
+
+### Использование
+
+- **Запуск DAG вручную**:
+  ```bash
+  docker exec -it airflow-scheduler airflow dags test vx_underground_processing yyyy-mm-dd
+  ```
+  Замените `yyyy-mm-dd` на нужную дату в формате `год-месяц-день`.
+
+## Доступ к интерфейсу Airflow и MinIO
+
+- **Airflow**: доступен по адресу `http://localhost:8080`.
+- **MinIO**: доступен по адресу `http://localhost:9001`.
+
