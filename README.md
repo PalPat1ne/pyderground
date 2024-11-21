@@ -34,7 +34,7 @@
    ```
 5. **Создайте пользователя для Airflow Веб интерфейса**
    ```bash
-   docker exec -it airflow-webserver airflow users create \
+   docker exec -it airflow-scheduler airflow users create \
     --username admin \
     --firstname Admin \
     --lastname User \
